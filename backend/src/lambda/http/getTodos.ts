@@ -1,14 +1,14 @@
 import 'source-map-support/register';
-
 import { APIGatewayProxyEvent, APIGatewayProxyResult } from 'aws-lambda';
-import * as middy from 'middy';
-import { cors } from 'middy/middlewares';
 import { getUserId } from '../utils';
 import { getUserTodos } from '../../businessLogic/todos';
+import { createLogger } from '../../utils/logger';
+const logger = createLogger('CreateTodo');
 
-export const handler = middy(async (event: APIGatewayProxyEvent): Promise<APIGatewayProxyResult> => {
+export const handler = async (event: APIGatewayProxyEvent): Promise<APIGatewayProxyResult> => {
 	const userId = getUserId(event);
 	const userTodos = await getUserTodos(userId);
+	logger.info(`Fetching all todo items for user with userId:${userId}`);
 	return {
 		statusCode: 200,
 		headers: {
@@ -18,9 +18,4 @@ export const handler = middy(async (event: APIGatewayProxyEvent): Promise<APIGat
 			items: userTodos
 		})
 	};
-});
-handler.use(
-	cors({
-		credentials: true
-	})
-);
+};

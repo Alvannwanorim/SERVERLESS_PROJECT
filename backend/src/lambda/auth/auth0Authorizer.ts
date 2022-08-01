@@ -6,8 +6,7 @@ import Axios from 'axios';
 import { JwtPayload } from '../../auth/JwtPayload';
 
 const logger = createLogger('auth');
-const jwksUrl = `${process.env.AUTH_0_JWK_URL}`;
-let cachedCert: string;
+const jwksUrl = 'https://dev-940185li.us.auth0.com/.well-known/jwks.json';
 export const handler = async (event: CustomAuthorizerEvent): Promise<CustomAuthorizerResult> => {
 	logger.info('Authorizing a user', event.authorizationToken);
 	try {
@@ -47,11 +46,17 @@ export const handler = async (event: CustomAuthorizerEvent): Promise<CustomAutho
 };
 
 async function verifyToken(authHeader: string): Promise<JwtPayload> {
-	const token = getToken(authHeader);
-	const cert = await getAuthCert();
-	const jwt = verify(token, cert, { algorithms: [ 'RS256' ] }) as JwtPayload;
+	try {
+		const token = getToken(authHeader);
+		const res = await Axios.get(jwksUrl);
 
-	return jwt;
+		const authCert = res['data']['keys'][0]['x5c'][0];
+		const cert = `-----BEGIN CERTIFICATE-----\n${authCert}\n-----END CERTIFICATE-----`;
+
+		return verify(token, cert, { algorithms: [ 'RS256' ] }) as JwtPayload;
+	} catch (err) {
+		logger.error('Failed to authenticate', err);
+	}
 }
 
 function getToken(authHeader: string): string {
@@ -63,42 +68,4 @@ function getToken(authHeader: string): string {
 	const token = split[1];
 
 	return token;
-}
-
-async function getAuthCert(): Promise<string> {
-	if (cachedCert) return cachedCert;
-
-	logger.info(`Fetching certificate from ${jwksUrl}`);
-
-	const { data } = await Axios.get(jwksUrl);
-	const keys = data.keys;
-
-	if (!keys || !keys.length) throw new Error('No JWKS keys found!');
-
-	const signingKeys = keys.filter(
-		(key) =>
-			key.use === 'sig' &&
-			key.kty === 'RSA' &&
-			key.alg === 'RS256' &&
-			key.n &&
-			key.e &&
-			key.kid &&
-			(key.x5c && key.x5c.length)
-	);
-
-	if (!signingKeys.length) throw new Error('No JWKS signing keys found!');
-
-	const key = signingKeys[0];
-	const publicKey = key.x5c[0];
-
-	cachedCert = createAuthCert(publicKey);
-
-	logger.info('Valid certificate found', cachedCert);
-
-	return cachedCert;
-}
-function createAuthCert(cert: string): string {
-	cert = cert.match(/.{1,64}/g).join('\n');
-	cert = `-----BEGIN CERTIFICATE-----\n${cert}\n-----END CERTIFICATE-----\n`;
-	return cert;
 }
