@@ -8,12 +8,12 @@ const logger = createLogger('CreateTodo');
 
 export const handler = async (event: APIGatewayProxyEvent): Promise<APIGatewayProxyResult> => {
 	const todoId = event.pathParameters.todoId;
-	const userId = getUserId(event);
+	const jwtToken = getUserId(event);
 	const attachemntId = uuid.v4();
-	logger.info(`Generating image upload url for todo item with  todoId:${todoId} for user with userId:${userId}`);
+	logger.info(`Generating image upload url for todo item with  todoId:${todoId}`);
 
 	const imageUploadUrl = await createImageAttachmentPresignedUrl(attachemntId);
-	await UpdateImageAttachmentUrl(userId, todoId, attachemntId);
+	await UpdateImageAttachmentUrl(jwtToken, todoId, attachemntId);
 	return {
 		statusCode: 200,
 		headers: {

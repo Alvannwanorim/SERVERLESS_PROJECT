@@ -7,12 +7,12 @@ import { createLogger } from '../../utils/logger';
 const logger = createLogger('CreateTodo');
 
 export const handler = async (event: APIGatewayProxyEvent): Promise<APIGatewayProxyResult> => {
-	const userId = getUserId(event);
+	const jwtToken = getUserId(event);
 	const todoId = event.pathParameters.todoId;
-	logger.info(`Updating todo item with  todoId:${todoId} for user with userId:${userId}`, { event });
+	logger.info(`Updating todo item with  todoId:${todoId}`, { event });
 	const updatedTodo: UpdateTodoRequest = JSON.parse(event.body);
 
-	await updateUserTodo(userId, todoId, updatedTodo);
+	await updateUserTodo(jwtToken, todoId, updatedTodo);
 
 	return {
 		statusCode: 200,

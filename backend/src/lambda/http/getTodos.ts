@@ -6,9 +6,9 @@ import { createLogger } from '../../utils/logger';
 const logger = createLogger('CreateTodo');
 
 export const handler = async (event: APIGatewayProxyEvent): Promise<APIGatewayProxyResult> => {
-	const userId = getUserId(event);
-	const userTodos = await getUserTodos(userId);
-	logger.info(`Fetching all todo items for user with userId:${userId}`);
+	const jwtToken = getUserId(event);
+	const userTodos = await getUserTodos(jwtToken);
+	logger.info(`Fetching all todo items for user with userId:${jwtToken}`);
 	return {
 		statusCode: 200,
 		headers: {

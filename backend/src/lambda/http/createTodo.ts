@@ -14,8 +14,8 @@ export const handler = async (event: APIGatewayProxyEvent): Promise<APIGatewayPr
 	logger.info('Creating user todo item: ', { event });
 	const newTodo: CreateTodoRequest = JSON.parse(event.body);
 
-	const userId = getUserId(event);
-	const newUserTodoItem = await createTodo(userId, newTodo);
+	const jwtToken = getUserId(event);
+	const newUserTodoItem = await createTodo(jwtToken, newTodo);
 
 	return {
 		statusCode: 201,

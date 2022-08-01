@@ -7,17 +7,21 @@ import { UpdateTodoRequest } from '../requests/UpdateTodoRequest';
 import { createLogger } from '../utils/logger';
 import * as createHttpError from 'http-errors';
 import { TodoUpdate } from '../models/TodoUpdate';
+import { parseUserId } from '../auth/utils';
 
 const logger = createLogger('todos');
 const todoAccess = new TodoAccess();
 const todoAttachment = new AttachmentUtils();
 
-export async function getUserTodos(userId: string): Promise<TodoItem[]> {
+export async function getUserTodos(jwtToken: string): Promise<TodoItem[]> {
+	const userId = parseUserId(jwtToken);
 	logger.info(`Fetching all todo items for user with userId:${userId}`, { userId });
+
 	return await todoAccess.getUserTodoItems(userId);
 }
 
-export async function createTodo(userId: string, createTodoRequest: CreateTodoRequest): Promise<TodoItem> {
+export async function createTodo(jwtToken: string, createTodoRequest: CreateTodoRequest): Promise<TodoItem> {
+	const userId = parseUserId(jwtToken);
 	const todoId = uuid.v4();
 	const newItem: TodoItem = {
 		userId,
@@ -32,7 +36,8 @@ export async function createTodo(userId: string, createTodoRequest: CreateTodoRe
 	return newItem;
 }
 
-export async function updateUserTodo(userId: string, todoId: string, updateTodoRequest: UpdateTodoRequest) {
+export async function updateUserTodo(jwtToken: string, todoId: string, updateTodoRequest: UpdateTodoRequest) {
+	const userId = parseUserId(jwtToken);
 	logger.info(`Updating todo item with  todoId:${todoId} for user with userId:${userId}`, { updateTodoRequest });
 	const userTodo = await todoAccess.getUserTodoItem(userId, todoId);
 
@@ -48,7 +53,8 @@ export async function updateUserTodo(userId: string, todoId: string, updateTodoR
 	todoAccess.updateUserTodoItem(userId, todoId, updateTodoRequest as TodoUpdate);
 }
 
-export async function deleteUserTodo(userId: string, todoId: string) {
+export async function deleteUserTodo(jwtToken: string, todoId: string) {
+	const userId = parseUserId(jwtToken);
 	const userTodo = await todoAccess.getUserTodoItem(userId, todoId);
 	if (!userTodo) throw createHttpError(404, 'Todo Item not found');
 
@@ -60,7 +66,8 @@ export async function deleteUserTodo(userId: string, todoId: string) {
 	todoAccess.deleteUserTodoItem(userId, todoId);
 }
 
-export async function UpdateImageAttachmentUrl(userId: string, todoId: string, attachmentId: string) {
+export async function UpdateImageAttachmentUrl(jwtToken: string, todoId: string, attachmentId: string) {
+	const userId = parseUserId(jwtToken);
 	const bucketName = process.env.ATTACHMENT_S3_BUCKET;
 	const attachemntUrl = `https://${bucketName}.s3.amazonaws.com/${attachmentId}`;
 

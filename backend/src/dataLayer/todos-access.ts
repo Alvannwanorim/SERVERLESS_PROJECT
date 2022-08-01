@@ -26,8 +26,11 @@ class TodoAccess {
 			.query({
 				TableName: this.todosTable,
 				IndexName: this.todosCreatedAtIndex,
-				KeyConditionExpression: 'userId = :userId',
+				KeyConditionExpression: '#userId = :userId',
 				ExpressionAttributeNames: {
+					'#userId': 'userId'
+				},
+				ExpressionAttributeValues: {
 					':userId': userId
 				}
 			})
